@@ -9,9 +9,9 @@ import os
 
 class SophosClient:
     def __init__(self):
-        self.client_id = os.getenv("SOPHOS_CLIENT_ID", "ab896b4f-0ff5-4fa9-9f8f-debce01cbcb5")
-        self.client_secret = os.getenv("SOPHOS_CLIENT_SECRET", "680ab56f596036e8947561151e1284b617331a6a6880e6e3d9c80bd3de59b0a20b85aad1e201f510ce335a3222de04d4f543")
-        self.tenant_id = os.getenv("SOPHOS_TENANT_ID", "7b6f33dc-7e03-4d71-9729-689e43882c47")
+        self.client_id = os.getenv("SOPHOS_CLIENT_ID", "")
+        self.client_secret = os.getenv("SOPHOS_CLIENT_SECRET", "")
+        self.tenant_id = os.getenv("SOPHOS_TENANT_ID", "")
         self.access_token = None
         
     def get_access_token(self):
