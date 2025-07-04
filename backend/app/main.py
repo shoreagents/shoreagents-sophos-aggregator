@@ -239,13 +239,13 @@ def schedule_data_fetch():
     """Schedule regular data fetching tasks."""
     import os
     
-    # Fetch endpoints every 6 hours (if enabled)
+    # Fetch endpoints every 15 minutes (if enabled) for real-time status monitoring
     if os.getenv("ENABLE_ENDPOINT_FETCHING", "true").lower() == "true":
-        schedule.every(6).hours.do(lambda: sophos_client.fetch_endpoints(next(get_db()), 100))
+        schedule.every(15).minutes.do(lambda: sophos_client.fetch_endpoints(next(get_db()), 100))
     
-    # Fetch events every 2 hours (if enabled)
+    # Fetch events every 1 hour (if enabled) for better security monitoring
     if os.getenv("ENABLE_SIEM_FETCHING", "true").lower() == "true":
-        schedule.every(2).hours.do(lambda: sophos_client.fetch_siem_events(next(get_db()), 100000))
+        schedule.every(1).hours.do(lambda: sophos_client.fetch_siem_events(next(get_db()), 100000))
 
 @app.post("/scheduler/start")
 async def start_scheduler():
@@ -262,8 +262,8 @@ async def start_scheduler():
         return {
             "message": "Scheduler started successfully",
             "scheduled_tasks": [
-                "Fetch endpoints every 6 hours",
-                "Fetch events every 2 hours"
+                "Fetch endpoints every 15 minutes",
+                "Fetch events every 1 hour"
             ]
         }
     else:
