@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://sophos:sophos123@db:5432/sophos_db
+      - SOPHOS_CLIENT_ID=${SOPHOS_CLIENT_ID}
+      - SOPHOS_CLIENT_SECRET=${SOPHOS_CLIENT_SECRET}
+      - SOPHOS_TENANT_ID=${SOPHOS_TENANT_ID}
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=sophos_db
+      - POSTGRES_USER=sophos
+      - POSTGRES_PASSWORD=sophos123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data: 
