@@ -106,6 +106,13 @@ class SophosClient:
     def _store_endpoint(self, db: Session, endpoint_data: Dict[str, Any]):
         """Store endpoint data in database."""
         try:
+            # Debug: Print first few endpoints to see available fields
+            if not hasattr(self, '_debug_printed'):
+                print(f"🔍 DEBUG: Sample endpoint data from Sophos API:")
+                print(f"Available fields: {list(endpoint_data.keys())}")
+                print(f"Full data sample: {endpoint_data}")
+                self._debug_printed = True
+            
             # Check if endpoint already exists
             existing = db.query(Endpoint).filter(Endpoint.endpoint_id == endpoint_data.get('id')).first()
             
@@ -117,7 +124,7 @@ class SophosClient:
                 existing.online_status = endpoint_data.get('online', False)
                 existing.health_status = endpoint_data.get('health', {}).get('overall')
                 existing.group_name = endpoint_data.get('group', {}).get('name')
-                existing.ip_addresses = endpoint_data.get('ipAddresses', [])
+                existing.ip_addresses = endpoint_data.get('ipv4Addresses', [])
                 existing.updated_at = datetime.utcnow()
             else:
                 # Create new endpoint
@@ -129,7 +136,7 @@ class SophosClient:
                     online_status=endpoint_data.get('online', False),
                     health_status=endpoint_data.get('health', {}).get('overall'),
                     group_name=endpoint_data.get('group', {}).get('name'),
-                    ip_addresses=endpoint_data.get('ipAddresses', [])
+                    ip_addresses=endpoint_data.get('ipv4Addresses', [])
                 )
                 db.add(new_endpoint)
             
