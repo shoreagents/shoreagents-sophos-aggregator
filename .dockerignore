@@ -1,0 +1,40 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+docs/
+README.md
+
+# Data files
+data/
+
+# Python files in root
+sophos_endpoint_inventory.py
+sophos_siem_events.py
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/ 
