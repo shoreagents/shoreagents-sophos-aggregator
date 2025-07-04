@@ -8,7 +8,7 @@ import threading
 import time
 from datetime import datetime, timedelta
 
-from .database import get_db, create_tables, Endpoint, SIEMEvent, EndpointEvent
+from .database import get_db, create_tables, Endpoint, SIEMEvent
 from .sophos_client import SophosClient
 
 app = FastAPI(title="Sophos Aggregator API", version="1.0.0")

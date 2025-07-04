@@ -46,17 +46,7 @@ class SIEMEvent(Base):
     raw_data = Column(JSON)
     fetched_at = Column(DateTime, default=datetime.utcnow)
 
-class EndpointEvent(Base):
-    __tablename__ = "endpoint_events"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    endpoint_name = Column(String, index=True)
-    endpoint_id = Column(String, index=True)
-    events_count = Column(Integer)
-    latest_event_time = Column(DateTime)
-    most_common_type = Column(String)
-    events_data = Column(JSON)
-    fetched_at = Column(DateTime, default=datetime.utcnow)
+
 
 
 

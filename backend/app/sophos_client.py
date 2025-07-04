@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import time
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
-from .database import Endpoint, SIEMEvent, EndpointEvent
+from .database import Endpoint, SIEMEvent
 import os
 
 class SophosClient:
