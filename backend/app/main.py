@@ -35,7 +35,7 @@ async def startup_event():
     
     # Auto-start scheduler if enabled via environment variable
     import os
-    if os.getenv("AUTO_START_SCHEDULER", "false").lower() == "true":
+    if os.getenv("AUTO_START_SCHEDULER", "true").lower() == "true":
         global scheduler_running
         if not scheduler_running:
             scheduler_running = True
