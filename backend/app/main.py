@@ -280,7 +280,16 @@ async def stop_scheduler():
 @app.get("/scheduler/status")
 async def get_scheduler_status():
     """Get scheduler status."""
+    jobs = schedule.get_jobs()
+    endpoint_next = None
+    siem_next = None
+    for job in jobs:
+        if "fetch_endpoints" in str(job.job_func):
+            endpoint_next = job.next_run
+        if "fetch_siem_events" in str(job.job_func):
+            siem_next = job.next_run
     return {
         "running": scheduler_running,
-        "next_run": schedule.next_run() if schedule.jobs else None
+        "next_endpoint_run": endpoint_next,
+        "next_siem_run": siem_next
     } 
