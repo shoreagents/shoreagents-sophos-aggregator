@@ -238,11 +238,11 @@ def run_scheduler():
 def schedule_data_fetch():
     """Schedule regular data fetching tasks."""
     import os
-    
+    print("DEBUG: ENABLE_ENDPOINT_FETCHING =", os.getenv("ENABLE_ENDPOINT_FETCHING"))
+    print("DEBUG: ENABLE_SIEM_FETCHING =", os.getenv("ENABLE_SIEM_FETCHING"))
     # Fetch endpoints every 15 minutes (if enabled) for real-time status monitoring
     if os.getenv("ENABLE_ENDPOINT_FETCHING", "true").lower() == "true":
         schedule.every(15).minutes.do(lambda: sophos_client.fetch_endpoints(next(get_db()), 100))
-    
     # Fetch events every 1 hour (if enabled) for better security monitoring
     if os.getenv("ENABLE_SIEM_FETCHING", "true").lower() == "true":
         schedule.every(1).hours.do(lambda: sophos_client.fetch_siem_events(next(get_db()), 100000))
