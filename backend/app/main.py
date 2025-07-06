@@ -297,9 +297,10 @@ async def get_scheduler_status():
     endpoint_next = None
     siem_next = None
     for job in jobs:
-        if "fetch_endpoints" in str(job.job_func):
+        # Identify jobs by their interval and unit
+        if job.interval == 15 and job.unit == 'minutes':
             endpoint_next = job.next_run
-        if "fetch_siem_events" in str(job.job_func):
+        elif job.interval == 1 and job.unit == 'hours':
             siem_next = job.next_run
     return {
         "running": scheduler_running,
