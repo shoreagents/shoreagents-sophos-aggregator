@@ -208,6 +208,14 @@ class SophosClient:
                     events = data.get('items', [])
                     if not events:
                         break
+                    # Debug: Print page info
+                    pages_info = data.get('pages', {})
+                    print(f"Page fetched: {len(events)} events")
+                    print(f"pages_info: {pages_info}")
+                    if pages_info.get('nextKey'):
+                        print(f"Next page key: {pages_info['nextKey']}")
+                    else:
+                        print("No nextKey, this is the last page.")
                     for event_data in events:
                         if len(all_events) < max_events:
                             self._store_siem_event(db, event_data)
@@ -215,7 +223,6 @@ class SophosClient:
                             event_ts = event_data.get('created_at') or event_data.get('when')
                             if event_ts and (not latest_event_timestamp or event_ts > latest_event_timestamp):
                                 latest_event_timestamp = event_ts
-                    pages_info = data.get('pages', {})
                     if not pages_info.get('nextKey'):
                         break
                     params['pageFromKey'] = pages_info['nextKey']
