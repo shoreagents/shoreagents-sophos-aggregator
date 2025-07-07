@@ -1,0 +1,32 @@
+name: Automated Data Fetching
+
+on:
+  schedule:
+    # Fetch endpoints every 15 minutes
+    - cron: '*/15 * * * *'
+    # Fetch events every hour
+    - cron: '0 * * * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  fetch-endpoints:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule[0].cron == '*/15 * * * *'
+    
+    steps:
+    - name: Fetch Endpoints
+      run: |
+        curl -X POST ${{ secrets.RAILWAY_APP_URL }}/fetch/endpoints
+      env:
+        RAILWAY_APP_URL: ${{ secrets.RAILWAY_APP_URL }}
+
+  fetch-events:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule[0].cron == '0 * * * *'
+    
+    steps:
+    - name: Fetch Events
+      run: |
+        curl -X POST ${{ secrets.RAILWAY_APP_URL }}/fetch/events
+      env:
+        RAILWAY_APP_URL: ${{ secrets.RAILWAY_APP_URL }} 
