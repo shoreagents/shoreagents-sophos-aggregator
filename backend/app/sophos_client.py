@@ -183,16 +183,17 @@ class SophosClient:
         
         last_timestamp = self._get_last_siem_event_timestamp()
         first_run = False
-        if last_timestamp:
-            try:
-                from datetime import datetime, timedelta
-                last_dt = datetime.fromisoformat(last_timestamp.replace('Z', '+00:00'))
-                buffered_dt = last_dt - timedelta(minutes=5)
-                params["since"] = buffered_dt.isoformat().replace('+00:00', 'Z')
-            except Exception as e:
-                print(f"❌ Error parsing last timestamp for buffer: {e}")
-                params["since"] = last_timestamp
-        else:
+        # Temporarily disable 'since' parameter for testing
+        # if last_timestamp:
+        #     try:
+        #         from datetime import datetime, timedelta
+        #         last_dt = datetime.fromisoformat(last_timestamp.replace('Z', '+00:00'))
+        #         buffered_dt = last_dt - timedelta(minutes=5)
+        #         params["since"] = buffered_dt.isoformat().replace('+00:00', 'Z')
+        #     except Exception as e:
+        #         print(f"❌ Error parsing last timestamp for buffer: {e}")
+        #         params["since"] = last_timestamp
+        if not last_timestamp:
             # First run: limit to 5000 events
             first_run = True
             max_events = 5000
