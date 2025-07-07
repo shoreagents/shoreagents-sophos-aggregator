@@ -166,65 +166,64 @@ class SophosClient:
             print(f"❌ Error writing last SIEM event timestamp: {e}")
 
     def fetch_siem_events(self, db: Session, max_events: int = 10000) -> Dict[str, Any]:
-        """Fetch SIEM events and store in database, using 'since' polling."""
+        """Fetch SIEM events and store in database, using 'since' polling with a 5-minute overlap. Limit to 5000 events on first run."""
         if not self.access_token:
             self.get_access_token()
             
         url = "https://api-us01.central.sophos.com/siem/v1/events"
-        
         headers = {
             "Authorization": f"Bearer {self.access_token}",
             "X-Tenant-ID": self.tenant_id,
             "Accept": "application/json"
         }
         
-        # Use 'limit' instead of 'pageSize', cap at 200
         params = {
-            "limit": min(max_events, 200)
+            "limit": 200
         }
         
-        # Add 'since' parameter if available
         last_timestamp = self._get_last_siem_event_timestamp()
+        first_run = False
         if last_timestamp:
-            params["since"] = last_timestamp
-        
+            try:
+                from datetime import datetime, timedelta
+                last_dt = datetime.fromisoformat(last_timestamp.replace('Z', '+00:00'))
+                buffered_dt = last_dt - timedelta(minutes=5)
+                params["since"] = buffered_dt.isoformat().replace('+00:00', 'Z')
+            except Exception as e:
+                print(f"❌ Error parsing last timestamp for buffer: {e}")
+                params["since"] = last_timestamp
+        else:
+            # First run: limit to 5000 events
+            first_run = True
+            max_events = 5000
+
         all_events = []
         latest_event_timestamp = last_timestamp
-        
+
         try:
             while len(all_events) < max_events:
                 response = requests.get(url, headers=headers, params=params)
-                
                 if response.status_code == 200:
                     data = response.json()
                     events = data.get('items', [])
-                    
                     if not events:
                         break
-                    
-                    # Store events in database
                     for event_data in events:
                         if len(all_events) < max_events:
                             self._store_siem_event(db, event_data)
                             all_events.append(event_data)
-                            # Track the latest event timestamp
                             event_ts = event_data.get('created_at') or event_data.get('when')
                             if event_ts and (not latest_event_timestamp or event_ts > latest_event_timestamp):
                                 latest_event_timestamp = event_ts
-                    
-                    # Check for next page
                     pages_info = data.get('pages', {})
                     if not pages_info.get('nextKey'):
                         break
-                    
                     params['pageFromKey'] = pages_info['nextKey']
                     params['limit'] = min(max_events - len(all_events), 200)
                     time.sleep(0.1)
-                    
                 else:
                     print(f"❌ Error: {response.status_code}")
                     break
-                    
         except Exception as e:
             print(f"❌ Exception: {str(e)}")
             return {"success": False, "error": str(e)}

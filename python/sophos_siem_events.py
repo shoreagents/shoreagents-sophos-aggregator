@@ -28,7 +28,7 @@ def get_access_token(client_id, client_secret):
         print(f"❌ Error getting access token: {e}")
         return None
 
-def get_siem_events(access_token, tenant_id, event_type=None, days_back=7, page_size=200, max_events=200):
+def get_siem_events(access_token, tenant_id, event_type=None, days_back=7, page_size=200):
     """Get SIEM events with optional filtering."""
     base_url = "https://api-us01.central.sophos.com/siem/v1/events"
     
@@ -54,31 +54,19 @@ def get_siem_events(access_token, tenant_id, event_type=None, days_back=7, page_
     has_more = True
     
     print(f"📡 Fetching SIEM events from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
-    print(f"   Max events: {max_events}")
     if event_type:
         print(f"   Filter: {event_type}")
     
-    while has_more and len(all_events) < max_events:
+    while has_more:
         try:
             response = requests.get(base_url, headers=headers, params=params)
             response.raise_for_status()
             
             data = response.json()
             events = data.get("items", [])
+            all_events.extend(events)
             
-            # Limit events to max_events
-            remaining_slots = max_events - len(all_events)
-            if remaining_slots <= 0:
-                break
-                
-            events_to_add = events[:remaining_slots]
-            all_events.extend(events_to_add)
-            
-            print(f"   ✅ Retrieved {len(events_to_add)} events (Total: {len(all_events)})")
-            
-            if len(all_events) >= max_events:
-                print(f"   🛑 Reached max events limit ({max_events})")
-                break
+            print(f"   ✅ Retrieved {len(events)} events (Total: {len(all_events)})")
             
             has_more = data.get("has_more", False)
             
@@ -254,9 +242,9 @@ def main():
     
     print("✅ Access token obtained successfully")
     
-    # Get SIEM events (last 7 days, max 200 events)
-    print(f"\n📡 Fetching SIEM events...")
-    all_events = get_siem_events(access_token, TENANT_ID, days_back=7, page_size=200, max_events=200)
+    # Get all SIEM events (last 7 days)
+    print(f"\n📡 Fetching all SIEM events...")
+    all_events = get_siem_events(access_token, TENANT_ID, days_back=7, page_size=200)
     
     if all_events:
         # Analyze events
