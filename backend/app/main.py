@@ -204,4 +204,60 @@ async def get_stats(db: Session = Depends(get_db)):
             }
             for ev in recent_events
         ]
-    } 
+    }
+
+@app.delete("/data/events")
+async def delete_events(
+    all: bool = False,
+    days_older: int = None,
+    db: Session = Depends(get_db)
+):
+    """Delete SIEM events with optional filtering."""
+    try:
+        if all:
+            # Delete all events
+            deleted_count = db.query(SIEMEvent).delete()
+            db.commit()
+            return {
+                "message": f"Deleted all {deleted_count} events",
+                "deleted_count": deleted_count
+            }
+        elif days_older:
+            # Delete events older than specified days
+            cutoff_date = datetime.utcnow() - timedelta(days=days_older)
+            deleted_count = db.query(SIEMEvent).filter(
+                SIEMEvent.created_at < cutoff_date
+            ).delete()
+            db.commit()
+            return {
+                "message": f"Deleted {deleted_count} events older than {days_older} days",
+                "deleted_count": deleted_count,
+                "cutoff_date": cutoff_date
+            }
+        else:
+            raise HTTPException(status_code=400, detail="Must specify 'all=true' or 'days_older' parameter")
+            
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/data/endpoints")
+async def delete_endpoints(
+    all: bool = False,
+    db: Session = Depends(get_db)
+):
+    """Delete endpoint data."""
+    try:
+        if all:
+            deleted_count = db.query(Endpoint).delete()
+            db.commit()
+            return {
+                "message": f"Deleted all {deleted_count} endpoints",
+                "deleted_count": deleted_count
+            }
+        else:
+            raise HTTPException(status_code=400, detail="Must specify 'all=true' parameter")
+            
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e)) 
