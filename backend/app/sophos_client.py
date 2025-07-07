@@ -193,9 +193,9 @@ class SophosClient:
                 print(f"❌ Error parsing last timestamp for buffer: {e}")
                 params["since"] = last_timestamp
         else:
-            # First run: limit to 1000 events
+            # First run: limit to 200 events
             first_run = True
-            max_events = 1000
+            max_events = 200
 
         all_events = []
         latest_event_timestamp = last_timestamp
