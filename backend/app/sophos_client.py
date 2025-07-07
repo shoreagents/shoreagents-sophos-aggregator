@@ -165,8 +165,8 @@ class SophosClient:
         except Exception as e:
             print(f"❌ Error writing last SIEM event timestamp: {e}")
 
-    def fetch_siem_events(self, db: Session, max_events: int = 10000) -> Dict[str, Any]:
-        """Fetch SIEM events and store in database, using 'since' polling with a 5-minute overlap. Limit to 5000 events on first run."""
+    def fetch_siem_events(self, db: Session) -> Dict[str, Any]:
+        """Fetch SIEM events and store in database, using 'since' polling with a 5-minute overlap. Limit to 5000 events on first run only."""
         if not self.access_token:
             self.get_access_token()
             
@@ -201,7 +201,10 @@ class SophosClient:
         latest_event_timestamp = last_timestamp
 
         try:
-            while len(all_events) < max_events:
+            while True:
+                if first_run and len(all_events) >= max_events:
+                    print(f"🛑 Reached first-run max_events limit ({max_events})")
+                    break
                 response = requests.get(url, headers=headers, params=params)
                 if response.status_code == 200:
                     data = response.json()
@@ -217,7 +220,7 @@ class SophosClient:
                     else:
                         print("No nextKey, this is the last page.")
                     for event_data in events:
-                        if len(all_events) < max_events:
+                        if not first_run or len(all_events) < max_events:
                             self._store_siem_event(db, event_data)
                             all_events.append(event_data)
                             event_ts = event_data.get('created_at') or event_data.get('when')
@@ -226,7 +229,6 @@ class SophosClient:
                     if not pages_info.get('nextKey'):
                         break
                     params['pageFromKey'] = pages_info['nextKey']
-                    params['limit'] = min(max_events - len(all_events), 200)
                     time.sleep(0.1)
                 else:
                     print(f"❌ Error: {response.status_code}")
