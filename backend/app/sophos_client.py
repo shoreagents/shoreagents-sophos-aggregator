@@ -53,6 +53,9 @@ class SophosClient:
             "Accept": "application/json"
         }
         
+        # Cap page_size at 500 for Sophos API
+        page_size = min(page_size, 500)
+        
         all_endpoints = []
         page_count = 0
         
@@ -146,8 +149,24 @@ class SophosClient:
             print(f"❌ Error storing endpoint: {e}")
             db.rollback()
 
-    def fetch_siem_events(self, db: Session, max_events: int = 100000) -> Dict[str, Any]:
-        """Fetch SIEM events and store in database."""
+    def _get_last_siem_event_timestamp(self):
+        """Read the last SIEM event timestamp from file."""
+        try:
+            with open("last_siem_event_timestamp.txt", "r") as f:
+                return f.read().strip()
+        except Exception:
+            return None
+
+    def _set_last_siem_event_timestamp(self, timestamp):
+        """Write the last SIEM event timestamp to file."""
+        try:
+            with open("last_siem_event_timestamp.txt", "w") as f:
+                f.write(timestamp)
+        except Exception as e:
+            print(f"❌ Error writing last SIEM event timestamp: {e}")
+
+    def fetch_siem_events(self, db: Session, max_events: int = 10000) -> Dict[str, Any]:
+        """Fetch SIEM events and store in database, using 'since' polling."""
         if not self.access_token:
             self.get_access_token()
             
@@ -159,12 +178,18 @@ class SophosClient:
             "Accept": "application/json"
         }
         
-        # No time range limit - fetch all events
+        # Use 'limit' instead of 'pageSize', cap at 200
         params = {
-            "pageSize": min(max_events, 500)
+            "limit": min(max_events, 200)
         }
         
+        # Add 'since' parameter if available
+        last_timestamp = self._get_last_siem_event_timestamp()
+        if last_timestamp:
+            params["since"] = last_timestamp
+        
         all_events = []
+        latest_event_timestamp = last_timestamp
         
         try:
             while len(all_events) < max_events:
@@ -182,6 +207,10 @@ class SophosClient:
                         if len(all_events) < max_events:
                             self._store_siem_event(db, event_data)
                             all_events.append(event_data)
+                            # Track the latest event timestamp
+                            event_ts = event_data.get('created_at') or event_data.get('when')
+                            if event_ts and (not latest_event_timestamp or event_ts > latest_event_timestamp):
+                                latest_event_timestamp = event_ts
                     
                     # Check for next page
                     pages_info = data.get('pages', {})
@@ -189,6 +218,7 @@ class SophosClient:
                         break
                     
                     params['pageFromKey'] = pages_info['nextKey']
+                    params['limit'] = min(max_events - len(all_events), 200)
                     time.sleep(0.1)
                     
                 else:
@@ -199,9 +229,14 @@ class SophosClient:
             print(f"❌ Exception: {str(e)}")
             return {"success": False, "error": str(e)}
         
+        # Save the latest event timestamp for next polling
+        if latest_event_timestamp:
+            self._set_last_siem_event_timestamp(latest_event_timestamp)
+        
         return {
             "success": True,
-            "total_events": len(all_events)
+            "total_events": len(all_events),
+            "latest_event_timestamp": latest_event_timestamp
         }
 
     def _store_siem_event(self, db: Session, event_data: Dict[str, Any]):

@@ -51,7 +51,7 @@ async def health_check():
 @app.post("/fetch/endpoints")
 async def fetch_endpoints(
     background_tasks: BackgroundTasks,
-    page_size: int = 100,
+    page_size: int = 500,
     db: Session = Depends(get_db)
 ):
     """Fetch and store endpoint data from Sophos API."""
@@ -68,7 +68,7 @@ async def fetch_endpoints(
 @app.post("/fetch/events")
 async def fetch_events(
     background_tasks: BackgroundTasks,
-    max_events: int = 100000,
+    max_events: int = 10000,
     db: Session = Depends(get_db)
 ):
     """Fetch and store SIEM events from Sophos API."""
