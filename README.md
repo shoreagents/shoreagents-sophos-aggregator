@@ -76,7 +76,7 @@ sophos/
 - **Endpoint Management**: Fetch and store endpoint inventory
 - **SIEM Events**: Collect and analyze security events
 
-- **Scheduled Tasks**: Automated data collection
+
 - **RESTful API**: Complete data access endpoints
 
 ### Database Schema
@@ -96,10 +96,7 @@ sophos/
 - `GET /data/events` - Get stored events
 - `GET /data/stats` - Get aggregated statistics
 
-#### Scheduler Management
-- `POST /scheduler/start` - Start automated fetching
-- `POST /scheduler/stop` - Stop automated fetching
-- `GET /scheduler/status` - Get scheduler status
+
 
 ## 🐳 Docker Deployment
 
@@ -123,11 +120,6 @@ docker run -p 8000:8000 \
 
 ## 📊 Data Collection
 
-### Automated Schedule
-- **Endpoints**: Every 6 hours
-- **SIEM Events**: Every 2 hours
-- **API Testing**: Every 12 hours
-
 ### Manual Data Fetching
 ```bash
 # Fetch endpoints
@@ -135,10 +127,19 @@ curl -X POST http://localhost:8000/fetch/endpoints
 
 # Fetch events
 curl -X POST http://localhost:8000/fetch/events
-
-# Test API access
-curl -X POST http://localhost:8000/test/api
 ```
+
+### Automated Data Fetching with Railway Cron
+
+For automated data collection, use Railway's built-in cron functionality. See [Railway Cron Setup](docs/RAILWAY_CRON.md) for detailed instructions.
+
+**Quick Setup:**
+1. In Railway dashboard, click "New Service" → Select "Cron"
+2. Set command and schedule
+3. Configure environment variables
+4. Monitor job execution in Railway dashboard
+
+
 
 ## 🔍 Monitoring & Health
 

@@ -3,9 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 from typing import List, Dict, Any
-import schedule
-import threading
-import time
 from datetime import datetime, timedelta
 
 from .database import get_db, create_tables, Endpoint, SIEMEvent
@@ -25,25 +22,10 @@ app.add_middleware(
 # Global client instance
 sophos_client = SophosClient()
 
-# Background task scheduler
-scheduler_running = False
-
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database tables and start scheduler on startup."""
+    """Initialize database tables on startup."""
     create_tables()
-    
-    # Auto-start scheduler if enabled via environment variable
-    import os
-    if os.getenv("AUTO_START_SCHEDULER", "true").lower() == "true":
-        global scheduler_running
-        if not scheduler_running:
-            scheduler_running = True
-            schedule_data_fetch()
-            
-            # Start scheduler in background thread
-            scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
-            scheduler_thread.start()
 
 @app.get("/")
 async def root():
@@ -57,9 +39,7 @@ async def root():
             "fetch_events": "/fetch/events",
             "get_endpoints": "/data/endpoints",
             "get_events": "/data/events",
-            "get_stats": "/data/stats",
-            "start_scheduler": "/scheduler/start",
-            "stop_scheduler": "/scheduler/stop"
+            "get_stats": "/data/stats"
         }
     }
 
@@ -101,8 +81,6 @@ async def fetch_events(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
 
 @app.get("/data/endpoints")
 async def get_endpoints(
@@ -226,84 +204,4 @@ async def get_stats(db: Session = Depends(get_db)):
             }
             for ev in recent_events
         ]
-    }
-
-def run_scheduler():
-    """Background scheduler function."""
-    global scheduler_running
-    while scheduler_running:
-        schedule.run_pending()
-        time.sleep(60)  # Check every minute
-
-def schedule_data_fetch():
-    """Schedule regular data fetching tasks."""
-    import os
-    print("DEBUG: ENABLE_ENDPOINT_FETCHING =", os.getenv("ENABLE_ENDPOINT_FETCHING"))
-    print("DEBUG: ENABLE_SIEM_FETCHING =", os.getenv("ENABLE_SIEM_FETCHING"))
-    
-    # Fetch endpoints every 15 minutes (if enabled) for real-time status monitoring
-    if os.getenv("ENABLE_ENDPOINT_FETCHING", "true").lower() == "true":
-        print("DEBUG: Scheduling endpoint fetching job...")
-        schedule.every(15).minutes.do(lambda: sophos_client.fetch_endpoints(next(get_db()), 100))
-        print("DEBUG: Endpoint job scheduled")
-    else:
-        print("DEBUG: Endpoint fetching DISABLED")
-    
-    # Fetch events every 1 hour (if enabled) for better security monitoring
-    if os.getenv("ENABLE_SIEM_FETCHING", "true").lower() == "true":
-        print("DEBUG: Scheduling SIEM event fetching job...")
-        schedule.every(1).hours.do(lambda: sophos_client.fetch_siem_events(next(get_db()), 100000))
-        print("DEBUG: SIEM job scheduled")
-    else:
-        print("DEBUG: SIEM fetching DISABLED")
-    
-    print("DEBUG: Total scheduled jobs:", len(schedule.get_jobs()))
-    print("DEBUG: All jobs:", [str(job) for job in schedule.get_jobs()])
-
-@app.post("/scheduler/start")
-async def start_scheduler():
-    """Start the background scheduler."""
-    global scheduler_running
-    if not scheduler_running:
-        scheduler_running = True
-        schedule_data_fetch()
-        
-        # Start scheduler in background thread
-        scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
-        scheduler_thread.start()
-        
-        return {
-            "message": "Scheduler started successfully",
-            "scheduled_tasks": [
-                "Fetch endpoints every 15 minutes",
-                "Fetch events every 1 hour"
-            ]
-        }
-    else:
-        return {"message": "Scheduler is already running"}
-
-@app.post("/scheduler/stop")
-async def stop_scheduler():
-    """Stop the background scheduler."""
-    global scheduler_running
-    scheduler_running = False
-    schedule.clear()
-    return {"message": "Scheduler stopped successfully"}
-
-@app.get("/scheduler/status")
-async def get_scheduler_status():
-    """Get scheduler status."""
-    jobs = schedule.get_jobs()
-    endpoint_next = None
-    siem_next = None
-    for job in jobs:
-        # Identify jobs by their interval and unit
-        if job.interval == 15 and job.unit == 'minutes':
-            endpoint_next = job.next_run
-        elif job.interval == 1 and job.unit == 'hours':
-            siem_next = job.next_run
-    return {
-        "running": scheduler_running,
-        "next_endpoint_run": endpoint_next,
-        "next_siem_run": siem_next
     } 

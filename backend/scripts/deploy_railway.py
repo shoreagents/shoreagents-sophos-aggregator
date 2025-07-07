@@ -241,7 +241,6 @@ def main():
         print("- Make sure your DATABASE_URL is set in Railway")
         print("- Monitor deployment logs for any issues")
         print("- Test the health endpoint after deployment")
-        print("- Start the scheduler: POST /scheduler/start")
         
     else:
         print("\n🔧 Fix the failed checks before deploying.")

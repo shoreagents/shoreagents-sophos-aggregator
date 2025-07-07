@@ -6,8 +6,6 @@ A FastAPI-based backend service that aggregates data from Sophos Central API and
 
 - **Endpoint Management**: Fetch and store endpoint inventory data
 - **SIEM Events**: Collect and store security events
-
-- **Scheduled Tasks**: Automated data fetching with configurable intervals
 - **RESTful API**: Complete API for data retrieval and management
 - **Database Storage**: PostgreSQL integration with SQLAlchemy ORM
 - **Docker Support**: Containerized deployment
@@ -70,14 +68,37 @@ A FastAPI-based backend service that aggregates data from Sophos Central API and
 - `GET /data/events` - Get stored events (with filtering)
 - `GET /data/stats` - Get aggregated statistics
 
-### Scheduler Management
-- `POST /scheduler/start` - Start automated data fetching
-- `POST /scheduler/stop` - Stop automated data fetching
-- `GET /scheduler/status` - Get scheduler status
+
 
 ### System
 - `GET /` - API information
 - `GET /health` - Health check
+
+## Automated Data Fetching
+
+For automated data collection, use Railway's built-in cron functionality:
+
+### Railway Cron Setup
+1. In Railway dashboard, click "New Service" → Select "Cron"
+2. Configure the cron job with your desired command and schedule
+3. Set environment variables (DATABASE_URL, SOPHOS_CLIENT_ID, etc.)
+
+### Example Commands
+
+**Fetch Endpoints:**
+```bash
+cd backend && python -c "from app.sophos_client import SophosClient; from app.database import get_db, create_tables; create_tables(); client = SophosClient(); db = next(get_db()); client.fetch_endpoints(db, 100)"
+```
+
+**Fetch Events:**
+```bash
+cd backend && python -c "from app.sophos_client import SophosClient; from app.database import get_db, create_tables; create_tables(); client = SophosClient(); db = next(get_db()); client.fetch_siem_events(db, 100000)"
+```
+
+### Recommended Schedules
+- **Endpoints**: Every 15 minutes (`*/15 * * * *`)
+- **Events**: Every hour (`0 * * * *`)
+- **Full sync**: Every 6 hours (`0 */6 * * *`)
 
 ## Database Schema
 
@@ -122,11 +143,7 @@ A FastAPI-based backend service that aggregates data from Sophos Central API and
 | `PORT` | Application port | `8000` |
 | `ENVIRONMENT` | Environment name | `production` |
 
-### Scheduler Configuration
-
-The scheduler runs these tasks automatically:
-- **Endpoints**: Every 6 hours
-- **SIEM Events**: Every 2 hours  
+  
 
 
 ## Development
